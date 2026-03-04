@@ -9,34 +9,35 @@ import AdminDashboard from './components/AdminDashboard';
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [shopConfig, setShopConfig] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
+  
+  // Lazy initializers to prevent race conditions with localStorage
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('flashman_user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  // Initialize data from LocalStorage or Defaults
+  const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
+    const saved = localStorage.getItem('flashman_items');
+    return saved ? JSON.parse(saved) : INITIAL_FOOD_ITEMS;
+  });
+
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('flashman_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [shopConfig, setShopConfig] = useState<ShopConfig>(() => {
+    const saved = localStorage.getItem('flashman_shop');
+    return saved ? JSON.parse(saved) : DEFAULT_SHOP_CONFIG;
+  });
+
+  // Handle splash screen
   useEffect(() => {
-    const savedItems = localStorage.getItem('flashman_items');
-    const savedOrders = localStorage.getItem('flashman_orders');
-    const savedShop = localStorage.getItem('flashman_shop');
-    const savedUser = localStorage.getItem('flashman_user');
-
-    if (savedItems) setFoodItems(JSON.parse(savedItems));
-    else {
-      setFoodItems(INITIAL_FOOD_ITEMS);
-      localStorage.setItem('flashman_items', JSON.stringify(INITIAL_FOOD_ITEMS));
-    }
-
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
-    if (savedShop) setShopConfig(JSON.parse(savedShop));
-    if (savedUser) setUser(JSON.parse(savedUser));
-
-    // Simulate splash screen
-    const timer = setTimeout(() => setLoading(false), 2500);
+    const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Persist state changes
+  // Sync state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('flashman_items', JSON.stringify(foodItems));
   }, [foodItems]);
